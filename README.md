@@ -35,6 +35,23 @@ docker compose up -d                         # Postgres on 127.0.0.1:5432
 
 Liquibase creates the schema on startup and seeds the categories and accounts from the original spreadsheet.
 
+### Running from IntelliJ IDEA
+
+The shared run configurations in `.run/` are picked up automatically:
+
+| Configuration | What it does |
+|---|---|
+| **Full stack (dev)** | Starts the backend and the frontend together |
+| **Backend (Spring Boot)** | Starts Postgres first (and waits until it's healthy), then the API on :8080; can also be started with Debug |
+| **Frontend (Vite)** | `npm run dev` in `frontend/`, served on http://localhost:5173 |
+| **Postgres (Docker)** | `scripts/dev-postgres.sh`: `docker compose up -d --wait postgres` |
+
+One-time IDE setup:
+
+1. Import the backend: right-click `backend/pom.xml` → *Add as Maven Project*. The module is named `expense-tracker-backend`.
+2. Apply the Maven overrides described under *Registry isolation* below.
+3. Under *Settings → Languages & Frameworks → Node.js*, select Node 24 (IntelliJ lists the nvm versions), and run `npm ci` in `frontend/` once.
+
 ### Tests
 
 ```bash

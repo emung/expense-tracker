@@ -11,9 +11,10 @@
     </parent>
 
     <groupId>dev.emung</groupId>
-    <artifactId>expense-tracker</artifactId>
+    <!-- Distinct from the repository root so the IntelliJ Maven module doesn't clash with the root module. -->
+    <artifactId>expense-tracker-backend</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    <name>expense-tracker</name>
+    <name>expense-tracker-backend</name>
     <description>Self-hosted personal expense tracker</description>
 
     <!-- No <repositories>/<pluginRepositories>: everything resolves from Maven Central via .mvn/settings.xml. -->

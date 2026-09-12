@@ -43,6 +43,15 @@ The user-level `~/.m2/settings.xml` has a work profile (`prolion`) that is activ
 - **Report route:** it's lazy-loaded, keeping Recharts out of the initial bundle.
 - **Chart colors** follow the dataviz reference palette: a single validated blue for light and dark via `useComputedColorScheme`, and no per-category colors.
 
+## IntelliJ run configurations
+- The user runs IntelliJ IDEA 2026.2 **Ultimate** (Spring and Node.js plugins included). Shared run configurations live in `.run/*.run.xml`, since `.idea/` is git-ignored:
+  - `Backend (Spring Boot)` points at the module `expense-tracker-backend` and runs `Postgres (Docker)` before launch.
+  - `Frontend (Vite)` is an npm configuration using the project Node interpreter.
+  - `Full stack (dev)` is a compound of those two.
+- The backend's Maven artifactId is `expense-tracker-backend` so its module name doesn't clash with the IDE root module `expense-tracker`. The jar is still `target/app.jar` (`finalName`).
+- `scripts/dev-postgres.sh` adds the Docker CLI locations to `PATH` itself, because an IDE launched from the Dock doesn't inherit the shell PATH. nvm is initialised only in `~/.zshrc`.
+- The user's IDE already overrides Maven's user settings file and local repository, as described in the registry isolation section.
+
 ## Docker and deployment (verified on the Mac)
 - **Backend image:** built with `./mvnw` inside Temurin 25, so the Maven isolation also applies in Docker. It runs as the non-root user `app`, using layered Boot jars.
 - **Frontend image:**
