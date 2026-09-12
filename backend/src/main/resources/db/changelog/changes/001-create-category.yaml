@@ -1,0 +1,53 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-category
+      author: emi
+      changes:
+        - createTable:
+            tableName: category
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  generationType: BY DEFAULT
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_category
+              - column:
+                  name: name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sort_order
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: archived
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        # CHECK constraints and expression indexes are not expressible in Liquibase OSS change types.
+        - sql:
+            sql: >-
+              ALTER TABLE category ADD CONSTRAINT ck_category_name_not_blank CHECK (length(btrim(name)) > 0);
+              CREATE UNIQUE INDEX ux_category_name ON category (lower(name));
+      rollback:
+        - dropTable:
+            tableName: category

@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Backend (Spring Boot)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="expense-tracker-backend" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="dev.emung.expensetracker.ExpenseTrackerApplication" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backend" />
+    <method v="2">
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Postgres (Docker)" run_configuration_type="ShConfigurationType" />
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

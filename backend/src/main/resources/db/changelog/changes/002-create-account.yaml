@@ -1,0 +1,59 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-account
+      author: emi
+      changes:
+        - createTable:
+            tableName: account
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  generationType: BY DEFAULT
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_account
+              - column:
+                  name: name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: default_currency
+                  type: char(3)
+                  defaultValue: RON
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sort_order
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: archived
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: >-
+              ALTER TABLE account ADD CONSTRAINT ck_account_default_currency CHECK (default_currency IN ('RON', 'EUR'));
+              ALTER TABLE account ADD CONSTRAINT ck_account_name_not_blank CHECK (length(btrim(name)) > 0);
+              CREATE UNIQUE INDEX ux_account_name ON account (lower(name));
+      rollback:
+        - dropTable:
+            tableName: account

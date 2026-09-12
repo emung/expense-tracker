@@ -1,0 +1,57 @@
+# Local development.
+#   Postgres only (run backend/frontend natively):  docker compose up -d
+#   Full stack in containers:                       docker compose --profile app up --build
+#     -> http://localhost:${APP_PORT:-8080}
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-expenses}
+      POSTGRES_USER: ${POSTGRES_USER:-expenses}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      TZ: ${TZ:-Europe/Bucharest}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    profiles: [app]
+    build: ./backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-expenses}
+      DB_USERNAME: ${POSTGRES_USER:-expenses}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      TZ: ${TZ:-Europe/Bucharest}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/actuator/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  frontend:
+    profiles: [app]
+    build: ./frontend
+    ports:
+      - "${APP_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      # 127.0.0.1, not localhost: busybox resolves localhost to ::1 and nginx listens on IPv4.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+volumes:
+  pgdata:

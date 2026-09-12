@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-seed-accounts
+      author: emi
+      changes:
+        - insert:
+            tableName: account
+            columns:
+              - column: { name: name, value: SaltBank }
+              - column: { name: default_currency, value: RON }
+              - column: { name: sort_order, valueNumeric: 10 }
+        - insert:
+            tableName: account
+            columns:
+              - column: { name: name, value: Revolut }
+              - column: { name: default_currency, value: RON }
+              - column: { name: sort_order, valueNumeric: 20 }
+      rollback:
+        - delete:
+            tableName: account
+            where: name IN ('SaltBank', 'Revolut')

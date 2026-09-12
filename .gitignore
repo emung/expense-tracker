@@ -1,0 +1,27 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+# Local environment (contains the DB password)
+.env
+.env.mac
+
+# Personal financial source data — never commit
+*.xlsx
+*.numbers
+
+# Backend
+backend/target/
+
+# Frontend
+node_modules/
+frontend/dist/
+frontend/coverage/
+*.tsbuildinfo
+
+# Database dumps
+backups/
