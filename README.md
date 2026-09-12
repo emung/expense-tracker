@@ -75,6 +75,31 @@ docker compose --profile app up --build      # http://localhost:8080 (APP_PORT i
 
 Stop the natively running backend first, or set `APP_PORT` to another port, because both use 8080 by default.
 
+## Running the app on your Mac (day to day)
+
+This mode is for actually tracking expenses on the Mac. It uses built images, like on the Pi, and a separate database (volume `expense-tracker-mac_pgdata`), so development test data never mixes with real entries.
+
+One-time setup:
+
+```bash
+cp .env.mac.example .env.mac    # set POSTGRES_PASSWORD, e.g. openssl rand -base64 24
+```
+
+Everyday commands (IntelliJ has the same as *App on Mac (Docker)* and *App on Mac: stop*):
+
+```bash
+scripts/mac-app.sh up           # build what changed, start, wait until healthy -> http://localhost:8090
+scripts/mac-app.sh status       # containers and health
+scripts/mac-app.sh logs backend # follow logs
+scripts/mac-app.sh backup       # dump to backups/mac/
+scripts/mac-app.sh down         # stop (data is kept)
+```
+
+- **Starting with the Mac:** the containers use `restart: unless-stopped`, so they come back whenever Docker starts. Enable "start at login" in OrbStack or Docker Desktop.
+- **Updating:** `git pull && scripts/mac-app.sh up`.
+- **Ports:** development keeps 8080 (API), 5173 (Vite) and 5432 (dev Postgres); this app's Postgres isn't published at all.
+- **Wiping this app's data is irreversible:** `scripts/mac-app.sh down && docker volume rm expense-tracker-mac_pgdata`.
+
 ## Deploying to the Raspberry Pi
 
 The Pi builds the arm64 images itself from a git checkout, so no container registry is needed.

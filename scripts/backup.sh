@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 
 compose_file="${1:-docker-compose.prod.yml}"
 keep="${KEEP:-30}"
-backup_dir="backups"
+backup_dir="${BACKUP_DIR:-backups}"
 mkdir -p "$backup_dir"
 
 target="$backup_dir/expenses-$(date +%Y-%m-%d_%H%M%S).dump"

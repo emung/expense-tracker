@@ -8,6 +8,7 @@
 
 # Local environment (contains the DB password)
 .env
+.env.mac
 
 # Personal financial source data — never commit
 *.xlsx

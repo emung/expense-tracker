@@ -65,6 +65,14 @@ The user-level `~/.m2/settings.xml` has a work profile (`prolion`) that is activ
   - It was tested on the Mac as a fresh install: healthy stack, 5 changesets, seeded data.
 - **Backups:** `scripts/backup.sh` writes `pg_dump` custom-format dumps into the git-ignored `backups/`, keeps `KEEP` dumps (default 30), and its output was checked with `pg_restore --list`.
 
+## Day-to-day app on the Mac
+- The user wanted the app fully containerized on the Mac for **real use**, not for development, with a **separate database**.
+- `scripts/mac-app.sh up|down|restart|status|logs|backup` reuses `docker-compose.prod.yml` as the project `expense-tracker-mac` (volume `expense-tracker-mac_pgdata`).
+- It exports the values from the git-ignored `.env.mac` (template `.env.mac.example`, default `APP_PORT=8090`). Exported values override the dev `.env`, which Compose would otherwise read.
+- Backups go to `backups/mac/` through `BACKUP_DIR`.
+- IntelliJ has *App on Mac (Docker)* and *App on Mac: stop*.
+- Never run `down -v` or remove that volume without asking: it holds real data.
+
 ## Infrastructure decisions
 - Git remote: GitHub (`emung/expense-tracker`). There is no container registry.
 - The Pi 5 builds the images itself: `git pull && docker compose -f docker-compose.prod.yml up -d --build`.
