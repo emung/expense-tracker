@@ -1,0 +1,129 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-expense
+      author: emi
+      changes:
+        - createTable:
+            tableName: expense
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  generationType: BY DEFAULT
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_expense
+              - column:
+                  name: expense_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: merchant
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: category_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: account_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: entry_type
+                  type: varchar(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: original_amount
+                  type: numeric(12,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: original_currency
+                  type: char(3)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fx_rate
+                  type: numeric(12,6)
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: amount_ron
+                  type: numeric(12,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: amount_expression
+                  type: varchar(255)
+              - column:
+                  name: details
+                  type: varchar(1000)
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            constraintName: fk_expense_category
+            baseTableName: expense
+            baseColumnNames: category_id
+            referencedTableName: category
+            referencedColumnNames: id
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            constraintName: fk_expense_account
+            baseTableName: expense
+            baseColumnNames: account_id
+            referencedTableName: account
+            referencedColumnNames: id
+            onDelete: RESTRICT
+        - createIndex:
+            indexName: ix_expense_date
+            tableName: expense
+            columns:
+              - column:
+                  name: expense_date
+                  descending: true
+              - column:
+                  name: id
+                  descending: true
+        - createIndex:
+            indexName: ix_expense_category
+            tableName: expense
+            columns:
+              - column:
+                  name: category_id
+        - createIndex:
+            indexName: ix_expense_account
+            tableName: expense
+            columns:
+              - column:
+                  name: account_id
+        - sql:
+            sql: >-
+              ALTER TABLE expense ADD CONSTRAINT ck_expense_merchant_not_blank CHECK (length(btrim(merchant)) > 0);
+              ALTER TABLE expense ADD CONSTRAINT ck_expense_entry_type CHECK (entry_type IN ('EXPENSE', 'REFUND'));
+              ALTER TABLE expense ADD CONSTRAINT ck_expense_original_amount_positive CHECK (original_amount > 0);
+              ALTER TABLE expense ADD CONSTRAINT ck_expense_original_currency CHECK (original_currency IN ('RON', 'EUR'));
+              ALTER TABLE expense ADD CONSTRAINT ck_expense_fx_rate_positive CHECK (fx_rate > 0);
+              ALTER TABLE expense ADD CONSTRAINT ck_expense_ron_rate CHECK (original_currency <> 'RON' OR fx_rate = 1);
+              ALTER TABLE expense ADD CONSTRAINT ck_expense_amount_ron_positive CHECK (amount_ron > 0);
+              CREATE INDEX ix_expense_merchant_lower ON expense (lower(merchant));
+      rollback:
+        - dropTable:
+            tableName: expense

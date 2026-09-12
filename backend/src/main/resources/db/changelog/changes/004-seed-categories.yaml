@@ -1,0 +1,25 @@
+# Categories taken from the original Numbers sheet ("Retur" is modelled as entry_type = REFUND instead).
+databaseChangeLog:
+  - changeSet:
+      id: 004-seed-categories
+      author: emi
+      changes:
+        - insert: { tableName: category, columns: [ { column: { name: name, value: Abonamente } },         { column: { name: sort_order, valueNumeric: 10 } } ] }
+        - insert: { tableName: category, columns: [ { column: { name: name, value: Activitati } },         { column: { name: sort_order, valueNumeric: 20 } } ] }
+        - insert: { tableName: category, columns: [ { column: { name: name, value: Altele } },             { column: { name: sort_order, valueNumeric: 30 } } ] }
+        - insert: { tableName: category, columns: [ { column: { name: name, value: Articole casnice } },   { column: { name: sort_order, valueNumeric: 40 } } ] }
+        - insert: { tableName: category, columns: [ { column: { name: name, value: Cadouri } },            { column: { name: sort_order, valueNumeric: 50 } } ] }
+        - insert: { tableName: category, columns: [ { column: { name: name, value: Chirie & Utilitati } }, { column: { name: sort_order, valueNumeric: 60 } } ] }
+        - insert: { tableName: category, columns: [ { column: { name: name, value: Consumabile } },        { column: { name: sort_order, valueNumeric: 70 } } ] }
+        - insert: { tableName: category, columns: [ { column: { name: name, value: Facturi & Rate } },     { column: { name: sort_order, valueNumeric: 80 } } ] }
+        - insert: { tableName: category, columns: [ { column: { name: name, value: Imbracaminte } },       { column: { name: sort_order, valueNumeric: 90 } } ] }
+        - insert: { tableName: category, columns: [ { column: { name: name, value: Masina } },             { column: { name: sort_order, valueNumeric: 100 } } ] }
+        - insert: { tableName: category, columns: [ { column: { name: name, value: Restaurant } },         { column: { name: sort_order, valueNumeric: 110 } } ] }
+        - insert: { tableName: category, columns: [ { column: { name: name, value: Sanatate } },           { column: { name: sort_order, valueNumeric: 120 } } ] }
+        - insert: { tableName: category, columns: [ { column: { name: name, value: Scoala } },             { column: { name: sort_order, valueNumeric: 130 } } ] }
+      rollback:
+        - delete:
+            tableName: category
+            where: >-
+              name IN ('Abonamente', 'Activitati', 'Altele', 'Articole casnice', 'Cadouri', 'Chirie & Utilitati',
+              'Consumabile', 'Facturi & Rate', 'Imbracaminte', 'Masina', 'Restaurant', 'Sanatate', 'Scoala')

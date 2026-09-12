@@ -1,1 +1,17 @@
-databaseChangeLog: []
+# Append new changesets at the end. Never modify a changeset that has already been applied.
+databaseChangeLog:
+  - include:
+      file: changes/001-create-category.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/002-create-account.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/003-create-expense.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/004-seed-categories.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/005-seed-accounts.yaml
+      relativeToChangelogFile: true
