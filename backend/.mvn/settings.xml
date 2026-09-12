@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Project-local Maven settings, passed via .mvn/maven.config as both the user and global settings.
+  This REPLACES ~/.m2/settings.xml and ${maven.home}/conf/settings.xml, so no user-level or
+  installation-level profiles, servers or repositories (e.g. work registries) apply to this build.
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+
+    <!-- Separate cache so artifacts previously downloaded from other registries are never reused. -->
+    <localRepository>${user.home}/.m2/repository-expense-tracker</localRepository>
+
+    <interactiveMode>false</interactiveMode>
+
+    <mirrors>
+        <!-- Route every repository (including ones declared inside third-party POMs) to Maven Central. -->
+        <mirror>
+            <id>central-only</id>
+            <name>Maven Central</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <mirrorOf>*</mirrorOf>
+        </mirror>
+    </mirrors>
+</settings>
