@@ -2,7 +2,7 @@ import type { EntryType } from '../api/types';
 
 /** All user-facing Romanian strings that are shared between screens. */
 export const labels = {
-  appName: 'Cheltuieli',
+  appName: 'ExpenseTracker',
   nav: {
     expenses: 'Cheltuieli',
     report: 'Raport lunar',
