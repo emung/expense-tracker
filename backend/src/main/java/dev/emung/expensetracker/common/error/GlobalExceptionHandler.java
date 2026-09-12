@@ -9,6 +9,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -74,6 +75,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                         HttpStatusCode status, WebRequest request) {
         ProblemDetail body = problem(HttpStatus.BAD_REQUEST, "Parametru invalid",
                 "Valoarea „%s” nu este validă pentru „%s”.".formatted(ex.getValue(), ex.getPropertyName()));
+        return handleExceptionInternal(ex, body, headers, status, request);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMissingServletRequestParameter(MissingServletRequestParameterException ex, HttpHeaders headers,
+                                                                          HttpStatusCode status, WebRequest request) {
+        String detail = "Parametrul „%s” este obligatoriu.".formatted(ex.getParameterName());
+        ProblemDetail body = problem(HttpStatus.BAD_REQUEST, "Parametru lipsă", detail);
+        body.setProperty("errors", List.of(new FieldViolation(ex.getParameterName(), detail)));
         return handleExceptionInternal(ex, body, headers, status, request);
     }
 
