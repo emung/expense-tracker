@@ -7,6 +7,7 @@ The user-level `~/.m2/settings.xml` has a work profile (`prolion`) that is activ
 - `pom.xml` declares no `<repositories>` or `<pluginRepositories>`.
 - In IntelliJ, override the Maven "User settings file" and "Local repository" with the values above.
 - To check: `./mvnw help:effective-settings` should not mention prolion.
+- **The same rule applies to npm.** `~/.npmrc` has a commented-out prolion registry line. `frontend/.npmrc` pins `registry=https://registry.npmjs.org/` so this project stays on the public registry even if that line is uncommented. After installing, `grep -c prolion frontend/package-lock.json` should print 0.
 
 ## Product decisions (v1)
 - The app is based on the user's Numbers sheet: one table per payment source (SaltBank, Revolut, EUR), with columns Data | Magazin | Categorie | Suma | Detalii and 13 categories.
