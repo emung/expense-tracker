@@ -3,11 +3,13 @@ import { DateInput } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { IconCalendar } from '@tabler/icons-react';
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { SearchableSelect } from '../../components/SearchableSelect';
 import { useAccounts } from '../../api/accounts';
 import { useCategories } from '../../api/categories';
 import { useSaveExpense } from '../../api/expenses';
 import type { Currency, EntryType, Expense, ExpenseRequest, MerchantSuggestion } from '../../api/types';
 import { parseDateInput } from '../../lib/dateInput';
+import { hotkeyTarget } from '../../lib/hotkeys';
 import { evaluateExpression, isFormula } from '../../lib/expression';
 import { applyServerErrors } from '../../lib/formErrors';
 import { formatEur, formatRate, formatRon } from '../../lib/format';
@@ -190,12 +192,23 @@ export function ExpenseForm({ expense, defaultDate, layout = 'inline', onSaved, 
     );
   });
 
-  /** Enter in any text field saves, as in a spreadsheet row. Open dropdowns handle Enter themselves (defaultPrevented). */
+  /**
+   * Enter in any text field saves, as in a spreadsheet row. Open dropdowns handle Enter themselves
+   * (defaultPrevented), which is why Ctrl/⌘+Enter exists: it saves whatever has focus, including a
+   * dropdown that is open. That keystroke picks the highlighted option first, so the save waits a
+   * tick for the choice to reach the form before reading its values.
+   */
   const submitOnEnter = (event: KeyboardEvent<HTMLFormElement>) => {
-    if (event.key !== 'Enter' || event.defaultPrevented || event.nativeEvent.isComposing) return;
-    if (!(event.target instanceof HTMLInputElement)) return;
+    if (event.key !== 'Enter' || event.nativeEvent.isComposing) return;
+    const form = event.currentTarget;
+    if (event.ctrlKey || event.metaKey) {
+      event.preventDefault();
+      setTimeout(() => form.requestSubmit(), 0);
+      return;
+    }
+    if (event.defaultPrevented || !(event.target instanceof HTMLInputElement)) return;
     event.preventDefault();
-    event.currentTarget.requestSubmit();
+    form.requestSubmit();
   };
 
   const { amount, currency, rate } = form.values;
@@ -220,18 +233,15 @@ export function ExpenseForm({ expense, defaultDate, layout = 'inline', onSaved, 
             label={labels.fields.merchant}
             placeholder="ex. Penny"
             data-autofocus
+            {...hotkeyTarget('merchant')}
             {...form.getInputProps('merchant')}
             onSuggestionPicked={applySuggestion}
           />
         </Grid.Col>
         <Grid.Col span={spans.category}>
-          <Select
+          <SearchableSelect
             label={labels.fields.category}
             placeholder="Alegeți"
-            searchable
-            // Keyboard entry: typing highlights the first match, Enter or Tab picks it.
-            selectFirstOptionOnChange
-            autoSelectOnBlur
             nothingFoundMessage="Nicio categorie"
             data={activeCategories.map((c) => ({ value: String(c.id), label: c.archived ? `${c.name} (arhivată)` : c.name }))}
             {...form.getInputProps('categoryId')}

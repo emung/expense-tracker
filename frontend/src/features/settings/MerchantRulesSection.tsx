@@ -8,6 +8,7 @@ import { useCategories } from '../../api/categories';
 import { useDeleteMerchantRule, useMerchantRules, useSaveMerchantRule } from '../../api/merchantRules';
 import type { MerchantRule } from '../../api/types';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { SearchableSelect } from '../../components/SearchableSelect';
 import { CenteredLoader, QueryError } from '../../components/QueryState';
 import { applyServerErrors } from '../../lib/formErrors';
 import { labels } from '../../lib/labels';
@@ -211,12 +212,9 @@ function MerchantRuleForm({ rule, onDone }: { rule: MerchantRule | null; onDone:
     <form onSubmit={submit} noValidate>
       <Stack>
         <TextInput label={labels.fields.merchant} required maxLength={200} data-autofocus {...form.getInputProps('merchantKey')} />
-        <Select
+        <SearchableSelect
           label={labels.fields.category}
           required
-          searchable
-          selectFirstOptionOnChange
-          autoSelectOnBlur
           data={(categories.data ?? []).map((category) => ({ value: String(category.id), label: category.name }))}
           {...form.getInputProps('categoryId')}
         />

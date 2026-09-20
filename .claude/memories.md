@@ -102,3 +102,21 @@ Two traps recorded while planning: nginx caps request bodies at 1 MB (`frontend/
 3. **Tests that poke the DB with raw SQL are invisible to the JPA first-level cache.** Pin a rule by calling `MerchantRuleService.update`, not `UPDATE merchant_rule SET pinned = true`.
 
 Also: the 13 seeded categories have **no "Mancare"** — groceries are `Consumabile`. See `004-seed-categories.yaml` before inventing names in tests.
+
+## Keyboard shortcuts and the frontend test setup (A2, shipped)
+`useAppHotkeys` (called once from `AppLayout`) binds `n`, `/`, `g c|r|s`, `?` through Mantine's `useHotkeys`.
+- **The `g …` sequences are a timestamp window, not a second listener.** `g` stamps a ref; `c`/`r`/`s` navigate only if that stamp is younger than 1.2 s. Mantine's hook can't express sequences, and a second document listener would have needed its own tag guard.
+- Every handler is wrapped in `unlessModalOpen`, because Mantine's `tagsToIgnore` only protects fields: without it, `n` typed inside a modal would act on the page behind it. It looks for `[aria-modal="true"]`.
+- Focus targets are marked with `hotkeyTarget('merchant' | 'search')` and found with `focusHotkeyTarget`, so the layout doesn't need refs into pages it doesn't own. **When the field is on another page, the focus request has to wait for `pathname` to reach the destination** - navigation is a transition, so the commit that sets the request happens before the page renders.
+- `paths` moved from `router.tsx` to `lib/paths.ts`; otherwise router → AppLayout → hook → router is a cycle.
+- **Ctrl/⌘+Enter defers `requestSubmit` by a tick** (`setTimeout(…, 0)`). That keystroke first lets an open dropdown pick its highlighted option, and the deferred submit then reads a form state that already has it. Plain Enter still bails on `defaultPrevented`, so it never fights a dropdown.
+
+`SearchableSelect` wraps the searchable `Select` and **selects the label on focus**. Tabbing into an input already selects its text natively - the bug only shows when focus arrives another way (a click, or a shortcut), where Mantine parks the caret after the label and typing produces `ConsumabileCas`. Used by `ExpenseForm`, `ExpenseFiltersBar` and `MerchantRulesSection`.
+
+Tests now run on jsdom with React Testing Library (E4, pulled forward): `vite.config.ts` includes `.test.tsx`, and `src/test/setup.ts` stubs `matchMedia`, `ResizeObserver` and `scrollIntoView`, which Mantine needs. `src/test/render.tsx` renders inside MantineProvider + QueryClientProvider and returns a `userEvent` session.
+
+### Traps found while writing these tests
+1. **A Mantine dropdown's options are invisible to role queries in jsdom.** Floating UI can't measure anything, so the open dropdown keeps `display: none` and its options are out of the accessibility tree - query them with `{ hidden: true }`.
+2. **`getByLabelText` on a `Select` matches two elements**, the input and the listbox (`aria-labelledby` points at the same label). Use `getByRole('combobox', { name })`.
+3. **The non-searchable `Select` is still an `<input>`**, not a button, so "target is an HTMLInputElement" does not separate text fields from pickers. What separates them is that the combobox calls `preventDefault` on Enter.
+4. **In the Browser pane, a hidden pane throttles `requestAnimationFrame`**, which freezes Mantine transitions: a modal opened by a shortcut looks like it never opened. Take a screenshot (or poll for seconds) before concluding anything about modals there.

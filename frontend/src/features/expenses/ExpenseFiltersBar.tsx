@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { useAccounts } from '../../api/accounts';
 import { useCategories } from '../../api/categories';
 import type { EntryType, ExpenseFilters } from '../../api/types';
+import { SearchableSelect } from '../../components/SearchableSelect';
+import { hotkeyTarget } from '../../lib/hotkeys';
 
 interface ExpenseFiltersBarProps {
   filters: ExpenseFilters;
@@ -43,13 +45,12 @@ export function ExpenseFiltersBar({ filters, hasActiveFilters, onCategoryChange,
         value={search}
         onChange={(event) => setSearch(event.currentTarget.value)}
         w={{ base: '100%', sm: 240 }}
+        {...hotkeyTarget('search')}
       />
-      <Select
+      <SearchableSelect
         aria-label="Filtrează după categorie"
         placeholder="Toate categoriile"
         clearable
-        searchable
-        selectFirstOptionOnChange
         data={(categories.data ?? []).map((c) => ({ value: String(c.id), label: c.archived ? `${c.name} (arhivată)` : c.name }))}
         value={filters.categoryId ? String(filters.categoryId) : null}
         onChange={(value) => onCategoryChange(value ? Number(value) : undefined)}
