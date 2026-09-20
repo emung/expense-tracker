@@ -78,3 +78,14 @@ The user-level `~/.m2/settings.xml` has a work profile (`prolion`) that is activ
 - The Pi 5 builds the images itself: `git pull && docker compose -f docker-compose.prod.yml up -d --build`.
 - Local Docker runtime is OrbStack (Docker 29), so use Testcontainers 2.x.
 - Only JDK 26 is installed locally; the project targets `--release 25` and the Docker images use Temurin 25.
+
+## v2 roadmap decisions
+The plan for v2 lives in `docs/ROADMAP.md` (committed). Decisions taken with the user:
+- **Bank import targets SaltBank CSV only.** PDF statements are deferred; Revolut is never imported (1–2 entries/month, typed by hand).
+- **Budgets are a fixed monthly plan per category**, not a rolling average. Store them versioned by effective month (`category_budget(category_id, valid_from, amount_ron)`), never as a column on `category`, so changing a target doesn't rewrite past reports.
+- **Capture friction comes first** (v2.0): merchant rules → keyboard shortcuts → undo delete → recurring expenses → CSV import → CSV export. Merchant rules must land before the importer, because they are what pre-categorizes imported rows.
+- **Recurring expenses are propose-and-confirm, computed at query time** (`NOT EXISTS` against `expense` for that month), not a scheduled insert. Catch-up-safe on a Pi that reboots.
+- **Transfers get their own table, not a third `EntryType`.** `TRANSFER` in the enum would break `ck_expense_entry_type` and would silently enter every `SUM(...) FILTER (WHERE entry_type = 'EXPENSE')` in the report and totals.
+- **Explicitly out of scope:** auth/multi-user, Envers/audit tables, Redis or Spring Cache, event sourcing, a mobile app, and receipt OCR.
+
+Two traps recorded while planning: nginx caps request bodies at 1 MB (`frontend/nginx/default.conf`), so a CSV upload 413s at the proxy before Spring sees it; and `vite.config.ts` includes only `src/**/*.test.ts`, so `.tsx` component tests are excluded by configuration and none exist.

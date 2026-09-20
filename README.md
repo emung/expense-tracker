@@ -8,6 +8,8 @@ A self-hosted, single-user tracker for personal expenses. It replaces a spreadsh
 - **Monthly report.** It shows net spend per category: summary tiles, a bar chart, and a table with percentages.
 - **Settings.** Manage categories and accounts. Anything already used by expenses is archived instead of deleted.
 
+Planned work is in [docs/ROADMAP.md](docs/ROADMAP.md): bank-statement import, recurring expenses, monthly budgets and automatic BNR rates.
+
 | Layer | Stack |
 |---|---|
 | Backend | Spring Boot 4 (Java 25), Maven wrapper, Spring Data JPA, Liquibase, PostgreSQL 17 |
@@ -20,6 +22,7 @@ frontend/                 single-page app; nginx serves it and proxies /api in D
 docker-compose.yml        development (Postgres; add --profile app for the full stack)
 docker-compose.prod.yml   production on the Pi (builds images on the host)
 scripts/backup.sh         pg_dump backups with retention
+docs/ROADMAP.md           planned v2 features and their sequencing
 ```
 
 ## Development
