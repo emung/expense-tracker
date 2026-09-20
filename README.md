@@ -3,6 +3,7 @@
 A self-hosted, single-user tracker for personal expenses. It replaces a spreadsheet kept in Apple Numbers and has a Romanian UI.
 
 - **Quick entry.** The Suma field accepts formulas like `-88,74+38.99`. Enter saves and keeps the date, account and currency for the next receipt.
+- **Keyboard shortcuts.** `n` jumps to a new entry and `/` to the search box, `g c` / `g r` / `g s` move between the pages, and Ctrl/⌘+Enter saves even out of an open dropdown. `?` shows the whole list.
 - **EUR entries.** You enter a manual exchange rate, and the lei amount is computed on the server.
 - **Refunds and cashback.** They're recorded as *Retur* entries on any category and reduce that category's net spend.
 - **Monthly report.** It shows net spend per category: summary tiles, a bar chart, and a table with percentages.
@@ -61,6 +62,9 @@ One-time IDE setup:
 (cd backend && ./mvnw verify)                # unit + WebMvc tests, then Testcontainers ITs (needs Docker)
 (cd frontend && npm test && npm run typecheck)
 ```
+
+Frontend tests run on jsdom with React Testing Library; both `src/**/*.test.ts` and `.test.tsx` are picked up.
+
 
 ### Registry isolation
 

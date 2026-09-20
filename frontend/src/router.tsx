@@ -3,12 +3,7 @@ import { AppLayout } from './components/AppLayout';
 import { NotFoundPage, RouteErrorPage } from './components/ErrorPages';
 import { ExpensesPage } from './features/expenses/ExpensesPage';
 import { SettingsPage } from './features/settings/SettingsPage';
-
-export const paths = {
-  expenses: '/cheltuieli',
-  report: '/raport',
-  settings: '/setari',
-} as const;
+import { paths } from './lib/paths';
 
 export const router = createBrowserRouter([
   {
