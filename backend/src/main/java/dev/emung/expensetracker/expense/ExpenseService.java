@@ -12,6 +12,7 @@ import dev.emung.expensetracker.expense.dto.ExpenseListResponse;
 import dev.emung.expensetracker.expense.dto.ExpenseRequest;
 import dev.emung.expensetracker.expense.dto.ExpenseResponse;
 import dev.emung.expensetracker.expense.dto.MerchantSuggestion;
+import dev.emung.expensetracker.merchant.MerchantRuleService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -30,14 +31,16 @@ public class ExpenseService {
     private final MerchantQueryRepository merchants;
     private final CategoryRepository categories;
     private final AccountRepository accounts;
+    private final MerchantRuleService merchantRules;
 
     public ExpenseService(ExpenseRepository expenses, ExpenseTotalsRepository totals, MerchantQueryRepository merchants,
-                          CategoryRepository categories, AccountRepository accounts) {
+                          CategoryRepository categories, AccountRepository accounts, MerchantRuleService merchantRules) {
         this.expenses = expenses;
         this.totals = totals;
         this.merchants = merchants;
         this.categories = categories;
         this.accounts = accounts;
+        this.merchantRules = merchantRules;
     }
 
     public ExpenseListResponse list(ExpenseFilter filter, Pageable pageable) {
@@ -91,6 +94,9 @@ public class ExpenseService {
         expense.setAmount(amount.originalAmount(), amount.currency(), amount.fxRate(), amount.amountRon());
         expense.setAmountExpression(Text.blankToNull(request.amountExpression()));
         expense.setDetails(Text.blankToNull(request.details()));
+
+        // Remember the choice so the next entry for this merchant fills itself in.
+        merchantRules.learn(expense.getMerchant(), category, account);
     }
 
     /** Archived categories can't be chosen for new data, but an expense may keep the one it already has. */

@@ -30,6 +30,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Import(TestcontainersConfiguration.class)
 class SchemaMigrationIT {
 
+    private static final String INSERT_RULE = """
+            INSERT INTO merchant_rule (merchant_key, category_id, account_id)
+            VALUES (?, (SELECT min(id) FROM category), (SELECT min(id) FROM account))
+            """;
+
     private static final String INSERT_EXPENSE = """
             INSERT INTO expense (expense_date, merchant, category_id, account_id, entry_type,
                                  original_amount, original_currency, fx_rate, amount_ron)
@@ -134,5 +139,40 @@ class SchemaMigrationIT {
         assertThatThrownBy(() -> jdbc.update("DELETE FROM category WHERE id = (SELECT min(id) FROM category)"))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("fk_expense_category");
+    }
+
+    @Test
+    void merchantRuleKeysAreUniqueCaseInsensitively() {
+        jdbc.update(INSERT_RULE, "Lidl");
+        assertThatThrownBy(() -> jdbc.update(INSERT_RULE, "LIDL"))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("ux_merchant_rule_key");
+    }
+
+    @Test
+    void rejectsBlankMerchantRuleKey() {
+        assertThatThrownBy(() -> jdbc.update(INSERT_RULE, "   "))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("ck_merchant_rule_key_not_blank");
+    }
+
+    /** A rule is derived data, so it must never be the reason a category can't be deleted. */
+    @Test
+    void deletingACategoryTakesItsRulesWithIt() {
+        jdbc.update(INSERT_RULE, "Lidl");
+
+        jdbc.update("DELETE FROM category WHERE id = (SELECT min(id) FROM category)");
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM merchant_rule", Long.class)).isZero();
+    }
+
+    /** Losing the account only clears the hint: the rule itself survives. */
+    @Test
+    void deletingAnAccountClearsItFromRulesButKeepsThem() {
+        jdbc.update(INSERT_RULE, "Lidl");
+
+        jdbc.update("DELETE FROM account WHERE id = (SELECT min(id) FROM account)");
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM merchant_rule WHERE account_id IS NULL", Long.class)).isEqualTo(1);
     }
 }

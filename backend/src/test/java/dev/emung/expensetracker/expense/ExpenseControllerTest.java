@@ -138,13 +138,16 @@ class ExpenseControllerTest {
 
     @Test
     void merchantSuggestions() {
-        when(service.suggestMerchants("pen", 10)).thenReturn(List.of(new MerchantSuggestion("Penny", 16, 7L, 1L)));
+        when(service.suggestMerchants("pen", 10))
+                .thenReturn(List.of(new MerchantSuggestion("Penny", 16, 7L, 1L, new BigDecimal("43.95"), true)));
 
         MvcTestResult result = mvc.get().uri("/api/expenses/merchants?q=pen").exchange();
 
         assertThat(result).hasStatusOk();
         assertThat(result).bodyJson().extractingPath("$[0].merchant").isEqualTo("Penny");
         assertThat(result).bodyJson().extractingPath("$[0].lastCategoryId").isEqualTo(7);
+        assertThat(result).bodyJson().extractingPath("$[0].lastAmountRon").isEqualTo(43.95);
+        assertThat(result).bodyJson().extractingPath("$[0].fromRule").isEqualTo(true);
     }
 
     private static ExpenseListResponse emptyList() {

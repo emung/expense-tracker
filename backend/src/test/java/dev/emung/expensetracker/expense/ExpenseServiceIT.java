@@ -8,6 +8,8 @@ import dev.emung.expensetracker.expense.dto.ExpenseListResponse;
 import dev.emung.expensetracker.expense.dto.ExpenseRequest;
 import dev.emung.expensetracker.expense.dto.ExpenseResponse;
 import dev.emung.expensetracker.expense.dto.MerchantSuggestion;
+import dev.emung.expensetracker.merchant.MerchantRuleService;
+import dev.emung.expensetracker.merchant.dto.MerchantRuleRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -24,13 +26,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({TestcontainersConfiguration.class, ExpenseService.class, ExpenseTotalsRepository.class, MerchantQueryRepository.class})
+@Import({TestcontainersConfiguration.class, ExpenseService.class, ExpenseTotalsRepository.class, MerchantQueryRepository.class,
+        MerchantRuleService.class})
 class ExpenseServiceIT {
 
     private static final LocalDate AUG_1 = LocalDate.of(2026, 8, 1);
 
     @Autowired
     private ExpenseService service;
+    @Autowired
+    private MerchantRuleService merchantRules;
     @Autowired
     private JdbcTemplate jdbc;
 
@@ -176,6 +181,54 @@ class ExpenseServiceIT {
     }
 
     @Test
+    void savingAnExpenseLearnsWhereTheMerchantBelongs() {
+        service.create(ron(AUG_1, "Kaufland", "Consumabile", EntryType.EXPENSE, "88.74"));
+
+        assertThat(ruleCategoryId("Kaufland")).isEqualTo(categoryId("Consumabile"));
+        assertThat(ruleHitCount("Kaufland")).isEqualTo(1);
+
+        // An unpinned rule follows the most recent choice, and counts both entries.
+        service.create(ron(AUG_1.plusDays(1), "kaufland", "Articole casnice", EntryType.EXPENSE, "12"));
+
+        assertThat(ruleCategoryId("Kaufland")).isEqualTo(categoryId("Articole casnice"));
+        assertThat(ruleHitCount("Kaufland")).isEqualTo(2);
+    }
+
+    @Test
+    void aPinnedRuleWinsOverTheMostRecentEntry() {
+        service.create(ron(AUG_1, "Lidl", "Consumabile", EntryType.EXPENSE, "50"));
+        long ruleId = merchantRules.list("lidl").getFirst().id();
+        // Editing the rule by hand is what pins it.
+        merchantRules.update(ruleId, new MerchantRuleRequest("Lidl", categoryId("Consumabile"), null));
+
+        // A one-off purchase in another category must not move a pinned rule.
+        service.create(ron(AUG_1.plusDays(1), "Lidl", "Cadouri", EntryType.EXPENSE, "20"));
+
+        assertThat(ruleCategoryId("Lidl")).isEqualTo(categoryId("Consumabile"));
+        assertThat(ruleHitCount("Lidl")).isEqualTo(2);
+
+        var suggestion = service.suggestMerchants("lidl", 1).getFirst();
+        assertThat(suggestion.lastCategoryId()).isEqualTo(categoryId("Consumabile"));
+        assertThat(suggestion.fromRule()).isTrue();
+        assertThat(suggestion.lastAmountRon()).isEqualByComparingTo("20");
+    }
+
+    @Test
+    void suggestionsFallBackToTheLastEntryWhenTheRuleCategoryIsArchived() {
+        service.create(ron(AUG_1, "Emag", "Consumabile", EntryType.EXPENSE, "30"));
+        // Raw SQL here on purpose: the service refuses to point a rule at an archived category,
+        // so this is the only way to reach the state where an existing rule goes stale.
+        jdbc.update("UPDATE merchant_rule SET pinned = true, category_id = ? WHERE lower(merchant_key) = 'emag'",
+                categoryId("Cadouri"));
+        jdbc.update("UPDATE category SET archived = true WHERE id = ?", categoryId("Cadouri"));
+
+        var suggestion = service.suggestMerchants("emag", 1).getFirst();
+
+        assertThat(suggestion.lastCategoryId()).isEqualTo(categoryId("Consumabile"));
+        assertThat(suggestion.fromRule()).isFalse();
+    }
+
+    @Test
     void deleteRemovesExpense() {
         long id = service.create(ron(AUG_1, "Penny", "Consumabile", EntryType.EXPENSE, "10")).id();
 
@@ -199,6 +252,16 @@ class ExpenseServiceIT {
     private ExpenseRequest ron(LocalDate date, String merchant, String category, EntryType type, String amount, String account) {
         return new ExpenseRequest(date, merchant, categoryId(category), accountId(account), type, new BigDecimal(amount),
                 CurrencyCode.RON, null, null, null);
+    }
+
+    private long ruleCategoryId(String merchant) {
+        return jdbc.queryForObject("SELECT category_id FROM merchant_rule WHERE lower(merchant_key) = lower(?)",
+                Long.class, merchant);
+    }
+
+    private int ruleHitCount(String merchant) {
+        return jdbc.queryForObject("SELECT hit_count FROM merchant_rule WHERE lower(merchant_key) = lower(?)",
+                Integer.class, merchant);
     }
 
     private long categoryId(String name) {

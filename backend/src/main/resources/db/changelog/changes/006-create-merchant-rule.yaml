@@ -1,0 +1,86 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-create-merchant-rule
+      author: emi
+      changes:
+        - createTable:
+            tableName: merchant_rule
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  generationType: BY DEFAULT
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_merchant_rule
+              - column:
+                  name: merchant_key
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: category_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: account_id
+                  type: bigint
+              - column:
+                  name: hit_count
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: pinned
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        # A rule is derived data: it must never block deleting the category or account it points at.
+        # Losing the category makes the rule meaningless, so it goes with it; losing the account
+        # only clears the account hint, so the rule survives.
+        - addForeignKeyConstraint:
+            constraintName: fk_merchant_rule_category
+            baseTableName: merchant_rule
+            baseColumnNames: category_id
+            referencedTableName: category
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            constraintName: fk_merchant_rule_account
+            baseTableName: merchant_rule
+            baseColumnNames: account_id
+            referencedTableName: account
+            referencedColumnNames: id
+            onDelete: SET NULL
+        - createIndex:
+            indexName: ix_merchant_rule_category
+            tableName: merchant_rule
+            columns:
+              - column:
+                  name: category_id
+        # CHECK constraints and expression indexes aren't expressible in Liquibase OSS.
+        # The unique index is what makes the upsert in MerchantRuleService atomic.
+        - sql:
+            sql: >-
+              ALTER TABLE merchant_rule ADD CONSTRAINT ck_merchant_rule_key_not_blank CHECK (length(btrim(merchant_key)) > 0);
+              ALTER TABLE merchant_rule ADD CONSTRAINT ck_merchant_rule_hit_count CHECK (hit_count >= 0);
+              CREATE UNIQUE INDEX ux_merchant_rule_key ON merchant_rule (lower(merchant_key));
+      rollback:
+        - dropTable:
+            tableName: merchant_rule
