@@ -20,7 +20,10 @@ export function useMerchantSuggestions(query: string) {
   });
 }
 
-/** Anything that changes an expense also changes totals, reports, merchant suggestions and usage counts. */
+/**
+ * Anything that changes an expense also changes totals, reports, usage counts and merchant
+ * suggestions - and, because saving teaches the merchant's rule, the rules list too.
+ */
 function useInvalidateAfterExpenseChange() {
   const queryClient = useQueryClient();
   return () =>
@@ -29,6 +32,7 @@ function useInvalidateAfterExpenseChange() {
       queryClient.invalidateQueries({ queryKey: queryKeys.reports.all }),
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all }),
       queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.merchantRules.all }),
     ]);
 }
 

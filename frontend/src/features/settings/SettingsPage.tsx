@@ -3,6 +3,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { labels } from '../../lib/labels';
 import { AccountsSection } from './AccountsSection';
 import { CategoriesSection } from './CategoriesSection';
+import { MerchantRulesSection } from './MerchantRulesSection';
 
 export function SettingsPage() {
   return (
@@ -11,6 +12,7 @@ export function SettingsPage() {
       <Stack gap="lg">
         <CategoriesSection />
         <AccountsSection />
+        <MerchantRulesSection />
       </Stack>
     </>
   );

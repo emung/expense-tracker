@@ -15,6 +15,10 @@ export const queryKeys = {
     all: ['accounts'] as const,
     list: (includeArchived: boolean) => ['accounts', { includeArchived }] as const,
   },
+  merchantRules: {
+    all: ['merchantRules'] as const,
+    list: (query: string) => ['merchantRules', 'list', query] as const,
+  },
   reports: {
     all: ['reports'] as const,
     monthly: (month: string) => ['reports', 'monthly', month] as const,

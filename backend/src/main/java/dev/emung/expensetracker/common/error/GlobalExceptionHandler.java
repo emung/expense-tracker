@@ -27,7 +27,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             "ux_category_name", "Există deja o categorie cu acest nume.",
             "ux_account_name", "Există deja un cont cu acest nume.",
             "fk_expense_category", "Categoria este folosită de cheltuieli. Arhivați-o în loc să o ștergeți.",
-            "fk_expense_account", "Contul este folosit de cheltuieli. Arhivați-l în loc să îl ștergeți.");
+            "fk_expense_account", "Contul este folosit de cheltuieli. Arhivați-l în loc să îl ștergeți.",
+            "ux_merchant_rule_key", "Există deja o regulă pentru acest magazin.");
 
     @ExceptionHandler(NotFoundException.class)
     ProblemDetail handleNotFound(NotFoundException ex) {

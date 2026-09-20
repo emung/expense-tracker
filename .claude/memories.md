@@ -89,3 +89,16 @@ The plan for v2 lives in `docs/ROADMAP.md` (committed). Decisions taken with the
 - **Explicitly out of scope:** auth/multi-user, Envers/audit tables, Redis or Spring Cache, event sourcing, a mobile app, and receipt OCR.
 
 Two traps recorded while planning: nginx caps request bodies at 1 MB (`frontend/nginx/default.conf`), so a CSV upload 413s at the proxy before Spring sees it; and `vite.config.ts` includes only `src/**/*.test.ts`, so `.tsx` component tests are excluded by configuration and none exist.
+
+## Merchant rules (A1, shipped)
+`merchant_rule` (changeset 006) maps a merchant to a category + optional account, so the second entry for a shop is merchant + amount only. It is also what will pre-categorise imported CSV rows.
+- **Learned on every expense save** in `ExpenseService.apply` via `MerchantRuleService.learn`. An unpinned rule follows the latest entry; **editing a rule in Setări pins it** (`pinned = true`) and later entries then only increment `hit_count`. Without pinning the settings screen would be pointless, since the next save would revert every edit.
+- `MerchantQueryRepository.suggest` LEFT JOINs the rule and prefers it over the most recent expense, falling back when the rule's category or account is archived. `MerchantSuggestion` also carries `lastAmountRon` (shown in the dropdown, never pre-filled) and `fromRule`.
+- FKs are deliberate: category `ON DELETE CASCADE` (a rule is derived data and must never block deleting a category), account `ON DELETE SET NULL` (losing the account only clears the hint).
+
+### Three traps this hit — check these in any similar work
+1. **`where :query is null or ... like lower(concat('%', :query, '%'))` fails on Postgres** when the parameter is null: it goes untyped, Postgres resolves `||` as `bytea`, and `lower(bytea) does not exist` → 500. It can pass in tests and fail at runtime, because a plan cached on the connection from an earlier non-null call hides it. Use **two derived queries** instead (`findByOrderBy...` / `findByMerchantKeyContainingIgnoreCaseOrderBy...`), with `@EntityGraph` for the fetch joins. `Containing` also escapes LIKE wildcards for free.
+2. **JPA writes are invisible to the native queries in the same transaction until flushed.** `learn` uses `saveAndFlush` so the JdbcClient merchant-suggestion query sees the rule it just changed. Watch for this anywhere JdbcClient reads meet JPA writes.
+3. **Tests that poke the DB with raw SQL are invisible to the JPA first-level cache.** Pin a rule by calling `MerchantRuleService.update`, not `UPDATE merchant_rule SET pinned = true`.
+
+Also: the 13 seeded categories have **no "Mancare"** — groceries are `Consumabile`. See `004-seed-categories.yaml` before inventing names in tests.

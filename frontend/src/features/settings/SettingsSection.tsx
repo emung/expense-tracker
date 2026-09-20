@@ -6,13 +6,25 @@ interface SettingsSectionProps {
   title: string;
   description: string;
   addLabel: string;
-  showArchived: boolean;
-  onShowArchivedChange: (show: boolean) => void;
+  /** Omit both to hide the archive switch, for lists that have nothing to archive. */
+  showArchived?: boolean;
+  onShowArchivedChange?: (show: boolean) => void;
+  /** Extra control beside the add button, e.g. a search field. */
+  controls?: ReactNode;
   onAdd: () => void;
   children: ReactNode;
 }
 
-export function SettingsSection({ title, description, addLabel, showArchived, onShowArchivedChange, onAdd, children }: SettingsSectionProps) {
+export function SettingsSection({
+  title,
+  description,
+  addLabel,
+  showArchived,
+  onShowArchivedChange,
+  controls,
+  onAdd,
+  children,
+}: SettingsSectionProps) {
   return (
     <Paper withBorder p="md" radius="md" component="section" aria-label={title}>
       <Group justify="space-between" align="flex-start" mb="sm" gap="sm">
@@ -25,11 +37,14 @@ export function SettingsSection({ title, description, addLabel, showArchived, on
           </Text>
         </Stack>
         <Group gap="md">
-          <Switch
-            label="Afișează arhivate"
-            checked={showArchived}
-            onChange={(event) => onShowArchivedChange(event.currentTarget.checked)}
-          />
+          {controls}
+          {onShowArchivedChange && (
+            <Switch
+              label="Afișează arhivate"
+              checked={showArchived}
+              onChange={(event) => onShowArchivedChange(event.currentTarget.checked)}
+            />
+          )}
           <Button leftSection={<IconPlus size={16} />} onClick={onAdd}>
             {addLabel}
           </Button>

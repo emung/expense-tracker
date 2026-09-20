@@ -96,6 +96,29 @@ export interface MerchantSuggestion {
   uses: number;
   lastCategoryId: number;
   lastAccountId: number;
+  /** Most recent amount in lei, shown as a hint. Never pre-filled: the amount is what you're there to type. */
+  lastAmountRon: number | null;
+  /** True when a saved rule decided the category, rather than the last entry. */
+  fromRule: boolean;
+}
+
+export interface MerchantRule {
+  id: number;
+  merchantKey: string;
+  categoryId: number;
+  categoryName: string;
+  categoryArchived: boolean;
+  accountId: number | null;
+  accountName: string | null;
+  hitCount: number;
+  /** Rules edited by hand stop following later entries. */
+  pinned: boolean;
+}
+
+export interface MerchantRuleRequest {
+  merchantKey: string;
+  categoryId: number;
+  accountId?: number | null;
 }
 
 export interface CategoryTotal {
