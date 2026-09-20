@@ -86,6 +86,18 @@ preserves date, account, currency and rate after a create and refocuses merchant
 Pure frontend, no schema. Note when verifying: an automated `key Return` in the Browser pane arrives
 with `event.key === ""`, so exercise hotkeys with a synthetic `KeyboardEvent` through `javascript_tool`.
 
+**Two more things belong in this slice**, because they are the same surface and cost far less done here
+than bolted on later:
+
+- **Fix the searchable `Select`.** Typing into one appends to the label of the option already selected
+  instead of replacing it, so changing a category by keyboard means clearing the field first. Found
+  while testing A1 (the rule editor) but shared with `ExpenseForm`, so it is not a new defect — it is
+  squarely a keyboard-entry one, and A2 is where it should be fixed.
+- **Add `@testing-library/react` and the `jsdom` environment** (this is E4, pulled forward). A2 is
+  entirely keyboard behaviour: tedious to check by hand, easy to regress silently, and impossible to
+  cover today because `vite.config.ts` includes only `src/**/*.test.ts` and nothing renders. Doing it
+  here means the shortcuts ship with real coverage, and A4 and A5 land on a form that already has it.
+
 ### A3. Undo on delete — "Anulează ștergerea"
 
 **Value.** Rows are clickable and delete sits one click away; a mis-click currently costs a retype.
@@ -446,6 +458,8 @@ already asserts the database rejects bad raw inserts — every new CHECK gets a 
 
 ### E4. Frontend test coverage, before the form grows
 
+**Pulled forward into A2** — see that section. Kept here for the reasoning.
+
 `vite.config.ts` includes only `src/**/*.test.ts`, so **`.tsx` component tests are excluded by
 configuration** and none exist. `ExpenseForm` is about to absorb recurring templates, BNR auto-fill and
 import editing — it is the most behavior-dense file in the frontend and the least covered.
@@ -488,7 +502,7 @@ Named explicitly so they stay out of scope:
 
 | Milestone | Contents | Why this order |
 |---|---|---|
-| **v2.0 — Captură** | A1 merchant rules → A2 shortcuts → A3 undo → A4 recurring → A5 SaltBank CSV import → D3 export | A1 is the importer's categorization brain and must come first. A2 and A3 are hours of work for daily payoff. A5 is the big one and lands on top of A1. |
+| **v2.0 — Captură** | A1 merchant rules → A2 shortcuts (+ searchable `Select` fix, + E4 test setup) → A3 undo → A4 recurring → A5 SaltBank CSV import → D3 export | A1 is the importer's categorization brain and must come first. A2 and A3 are hours of work for daily payoff. A5 is the big one and lands on top of A1. |
 | **v2.1 — Claritate** | B2 budgets → B1 month-over-month → B3 trend → B4 recurring detection → B5 top merchants | Budgets need a few months of complete data, which v2.0 produces. B4 loops back and feeds A4. |
 | **v2.2 — Automatizare** | C1 BNR + E1 scheduling → E2 backup health → D1 unaccent search → D2 paste amounts | The first outbound HTTP call and the first scheduler in the codebase — worth doing as one deliberate slice, with E2's safety net alongside. |
-| **Later, on trigger** | A7 receipts, PDF import, C2 transfers, C3 balances, C4 currencies, B6 year overview, E4–E6 | Each has a condition that should prompt it, rather than a date. |
+| **Later, on trigger** | A7 receipts, PDF import, C2 transfers, C3 balances, C4 currencies, B6 year overview, E5–E6 | Each has a condition that should prompt it, rather than a date. |
