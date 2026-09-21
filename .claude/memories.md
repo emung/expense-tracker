@@ -195,3 +195,32 @@ Also: a restore whose category or account was archived in the meantime is refuse
 `isTransientError` in `notify.tsx` keeps the retry offer for 0/5xx only, since a 4xx would fail again.
 A Mantine `Modal` only renders its content while `opened`, so a test asserting `ConfirmDialog` copy
 must open it first.
+
+## Raspberry Pi deployment (documented, not yet performed)
+`docs/HOWTO-deploy-pi.md` is the first-install guide: prerequisites, build, verification, backups,
+day-to-day. The README's Pi section links it and keeps only the short version. As of writing, the Pi
+deploy has **not actually been run** - the prod compose path is proven only on the Mac
+(`scripts/mac-app.sh`, same `docker-compose.prod.yml`).
+
+What was checked before writing it:
+- **All five base images have arm64 manifests** (temurin 25 jdk/jre, node:24-slim, nginx:stable-alpine,
+  postgres:17-alpine), so nothing needs cross-building.
+- **`frontend/package-lock.json` carries the linux-arm64 native binaries** the build needs -
+  `@typescript/typescript-linux-arm64`, `@rolldown/binding-linux-arm64-gnu`,
+  `lightningcss-linux-arm64-gnu`. This is why the glibc `node:24-slim` build stage matters: the musl
+  variants exist too, but Alpine would pull `-musl` bindings into a build that expects glibc.
+- Prerequisites that decide whether the build works at all: 64-bit OS; **Docker CE with Compose v2**,
+  because both Dockerfiles use `RUN --mount=type=cache` and Raspberry Pi OS's `docker.io` +
+  `docker-compose` v1 have no BuildKit; swap raised on a 4 GB Pi (`CONF_MAXSWAP` caps `CONF_SWAPSIZE`,
+  so both must change) or the two services built separately; an SSH deploy key, since the repo is private.
+- The backend healthcheck tolerates ~4 minutes on first boot (90 s `start_period` + 10 x 15 s), which
+  is the Liquibase run against an empty DB.
+
+### The backups directory was missing from a fresh clone
+`.gitignore` had a bare `backups/`, so **nothing inside it was tracked and a fresh clone had no such
+directory**. The README's cron line redirects into `backups/backup.log`, and the shell opens that
+redirect *before* running the script - so `scripts/backup.sh`'s own `mkdir -p` never got the chance and
+the first cron backup died silently. Fixed two ways: `backups/*` + `!backups/.gitkeep` in `.gitignore`
+(dumps, logs and `backups/mac/` stay ignored), and `mkdir -p backups &&` added to the cron line in both
+the README and the script's header comment. **Any git-ignored directory a cron job writes into needs
+this treatment.**
