@@ -48,7 +48,10 @@ Every feature below is written to route through machinery that already exists:
 
 *The v2.0 slice. Ordered — A1 is a prerequisite for A5.*
 
-### A1. Learned auto-categorization — "Reguli magazin" / "Completare automată"
+### A1. Learned auto-categorization — "Reguli magazin" / "Completare automată" ✅
+
+**Shipped.** Changeset `006-create-merchant-rule.yaml`, rules learned on every save and editable in
+Setări, where editing one pins it.
 
 **Value.** The spreadsheet made you re-pick the category for Lidl forty times a year. From the second
 entry onwards this becomes a two-field form: merchant and amount. It is also the brain the CSV
@@ -73,7 +76,9 @@ Frontend: `MerchantAutocomplete`'s `onSuggestionPicked` already respects the `ca
 overwriting a choice the user made by hand. Add an editable rules list under `features/settings/`
 reusing `SettingsSection`.
 
-### A2. Keyboard-first entry — "Scurtături"
+### A2. Keyboard-first entry — "Scurtături" ✅
+
+**Shipped**, including the searchable `Select` fix and the E4 test setup pulled forward.
 
 **Value.** Saving on Enter already works. This closes the rest of the loop, so an evening of catching
 up on entries never needs the mouse.
@@ -98,14 +103,28 @@ than bolted on later:
   cover today because `vite.config.ts` includes only `src/**/*.test.ts` and nothing renders. Doing it
   here means the shortcuts ship with real coverage, and A4 and A5 land on a form that already has it.
 
-### A3. Undo on delete — "Anulează ștergerea"
+### A3. Undo on delete — "Anulează ștergerea" ✅
 
 **Value.** Rows are clickable and delete sits one click away; a mis-click currently costs a retype.
 Removes the fear tax that makes fast entry slow.
 
-**Tech.** No soft-delete column and no audit table. `useDeleteExpense`'s `onSuccess` shows a Mantine
-notification carrying an **Anulează** action that re-POSTs the captured `ExpenseRequest`. Deliberately
-not Envers — for a single-user tracker, a new id is a perfectly good undo.
+**Shipped.** No soft-delete column and no audit table: deleting shows a notification carrying an
+**Anulează** action for 8 seconds, which re-POSTs the `ExpenseRequest` captured before the delete.
+Deliberately not Envers — for a single-user tracker, a new id is a perfectly good undo.
+
+Two departures from the sketch above, both deliberate:
+
+- **The orchestration lives in `EditExpenseModal`, not in `useDeleteExpense`.** `api/` holds thin
+  transport hooks and imports no `lib/notify`, no `lib/format` and no `labels`; the offer needs all
+  three. Worth revisiting when A5 adds a second delete call site.
+- **`notifyUndo` is generic and reusable** (`lib/notify.tsx` — Mantine notifications have no `action`
+  prop, so the button is part of the message node), but it is wired only to the expense delete. The
+  Setări entities can't be deleted while referenced and archive instead, and re-creating a category
+  would change its id under the rules and expenses pointing at it.
+
+`requestFrom(expense)` in `api/expenses.ts` is the `Expense` → `ExpenseRequest` mapping; a restore
+whose category or account was archived in the meantime is refused by the server, and that failure is
+reported rather than retried.
 
 ### A4. Recurring expenses — "Cheltuieli recurente" / "De confirmat"
 
@@ -502,7 +521,7 @@ Named explicitly so they stay out of scope:
 
 | Milestone | Contents | Why this order |
 |---|---|---|
-| **v2.0 — Captură** | A1 merchant rules → A2 shortcuts (+ searchable `Select` fix, + E4 test setup) → A3 undo → A4 recurring → A5 SaltBank CSV import → D3 export | A1 is the importer's categorization brain and must come first. A2 and A3 are hours of work for daily payoff. A5 is the big one and lands on top of A1. |
+| **v2.0 — Captură** | ✅ A1 merchant rules → ✅ A2 shortcuts (+ searchable `Select` fix, + E4 test setup) → ✅ A3 undo → A4 recurring → A5 SaltBank CSV import → D3 export | A1 is the importer's categorization brain and must come first. A2 and A3 are hours of work for daily payoff. A5 is the big one and lands on top of A1. |
 | **v2.1 — Claritate** | B2 budgets → B1 month-over-month → B3 trend → B4 recurring detection → B5 top merchants | Budgets need a few months of complete data, which v2.0 produces. B4 loops back and feeds A4. |
 | **v2.2 — Automatizare** | C1 BNR + E1 scheduling → E2 backup health → D1 unaccent search → D2 paste amounts | The first outbound HTTP call and the first scheduler in the codebase — worth doing as one deliberate slice, with E2's safety net alongside. |
 | **Later, on trigger** | A7 receipts, PDF import, C2 transfers, C3 balances, C4 currencies, B6 year overview, E5–E6 | Each has a condition that should prompt it, rather than a date. |

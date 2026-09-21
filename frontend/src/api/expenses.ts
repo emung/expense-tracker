@@ -36,6 +36,27 @@ function useInvalidateAfterExpenseChange() {
     ]);
 }
 
+/**
+ * The request that would re-create this expense. Used to undo a delete: the entry comes back with a
+ * new id, which for a single-user tracker is a perfectly good undo.
+ */
+export function requestFrom(expense: Expense): ExpenseRequest {
+  return {
+    expenseDate: expense.expenseDate,
+    merchant: expense.merchant,
+    categoryId: expense.categoryId,
+    accountId: expense.accountId,
+    type: expense.type,
+    // Already positive - the sign lives in `type`, never in `signedAmountRon`.
+    originalAmount: expense.originalAmount,
+    originalCurrency: expense.originalCurrency,
+    // A RON entry carries a stored rate of 1; the request omits it, as the form does.
+    fxRate: expense.originalCurrency === 'RON' ? null : expense.fxRate,
+    amountExpression: expense.amountExpression,
+    details: expense.details,
+  };
+}
+
 export function useSaveExpense() {
   const invalidate = useInvalidateAfterExpenseChange();
   return useMutation({

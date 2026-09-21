@@ -123,3 +123,42 @@ Tests now run on jsdom with React Testing Library (E4, pulled forward): `vite.co
 2. **`getByLabelText` on a `Select` matches two elements**, the input and the listbox (`aria-labelledby` points at the same label). Use `getByRole('combobox', { name })`.
 3. **The non-searchable `Select` is still an `<input>`**, not a button, so "target is an HTMLInputElement" does not separate text fields from pickers. What separates them is that the combobox calls `preventDefault` on Enter.
 4. **In the Browser pane, a hidden pane throttles `requestAnimationFrame`**, which freezes Mantine transitions: a modal opened by a shortcut looks like it never opened. Take a screenshot (or poll for seconds) before concluding anything about modals there.
+
+## Undo on delete (A3, shipped)
+Deleting an expense shows an 8-second offer carrying **Anulează**, which re-POSTs the `ExpenseRequest`
+captured *before* the delete. The entry comes back with a new id - no soft-delete column, no Envers.
+`requestFrom(expense)` in `api/expenses.ts` is the `Expense` → `ExpenseRequest` mapping (`type`, not
+`entryType`; `fxRate: null` for RON; `originalAmount`, never `signedAmountRon`).
+
+The orchestration sits in `EditExpenseModal`, not in `useDeleteExpense`: `api/` holds thin transport
+hooks and imports no `lib/notify`, `lib/format` or `labels`, all of which the offer needs. Revisit
+when A5 adds a second delete call site. `notifyUndo` itself is generic - A4 and A6 can reuse it.
+
+### Five things this turned up
+1. **`notifications.show` silently drops a notification whose `id` is already on screen.** A stable id
+   would swallow the second of two quick deletes, so `notifyUndo` mints a fresh `randomId()` per offer
+   (it needs one anyway, to `hide` on click).
+2. **Mantine 9 notifications have no `action` prop.** `message` is a `ReactNode` rendered as the
+   `Notification`'s children, so the button goes inside it - which is why `lib/notify.ts` became
+   `notify.tsx`. Every import was extensionless, so the rename touched nothing else. Hover *and* focus
+   pause auto-close, so a keyboard user tabbing to the button is safe for free.
+3. **`mutate` vs `mutateAsync` for work that outlives its component.** TanStack Query drops `mutate`'s
+   per-call `onSuccess`/`onError` once the owning observer has no listeners, but the hook-level
+   `onSuccess` (the shared `invalidate`) always runs and `mutateAsync`'s promise always settles. The
+   restore hangs its toasts off `mutateAsync().then/.catch` so undoing after navigating away still
+   reports. (`EditExpenseModal` is never unmounted by closing - `ExpensesPage` renders it
+   unconditionally with `expense={editing}` - but the route can still change.)
+4. **The notifications store is a module-level singleton**: entries survive RTL `cleanup` and reappear
+   in the next test that mounts a container. `src/test/setup.ts` now calls `notifications.clean()` and
+   `cleanQueue()` in `afterEach`, and `src/test/render.tsx` mounts `<Notifications />` so tests render
+   the same shell as `App.tsx`. Don't use fake timers - Mantine's transitions and the auto-close both
+   hang off `window.setTimeout`, and 8 s never elapses in a test anyway.
+5. **A restore re-runs `merchantRules.learn`.** Pinned rules only move `hit_count`; an unpinned rule is
+   rewritten to what it already was, unless a *different* entry for the same merchant was saved inside
+   the same 8 seconds. Not worth code.
+
+Also: a restore whose category or account was archived in the meantime is refused by
+`ExpenseService.resolveCategory` (400 - there is no "current" category to grandfather on a create).
+`isTransientError` in `notify.tsx` keeps the retry offer for 0/5xx only, since a 4xx would fail again.
+A Mantine `Modal` only renders its content while `opened`, so a test asserting `ConfirmDialog` copy
+must open it first.
