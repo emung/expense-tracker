@@ -99,12 +99,14 @@ scripts/mac-app.sh up           # build what changed, start, wait until healthy 
 scripts/mac-app.sh status       # containers and health
 scripts/mac-app.sh logs backend # follow logs
 scripts/mac-app.sh backup       # dump to backups/mac/
+scripts/mac-app.sh hosts        # pin frontend.expense-tracker-mac.orb.local in /etc/hosts (sudo)
 scripts/mac-app.sh down         # stop (data is kept)
 ```
 
 - **Starting with the Mac:** the containers use `restart: unless-stopped`, so they come back whenever Docker starts. Enable "start at login" in OrbStack or Docker Desktop.
 - **Updating:** `git pull && scripts/mac-app.sh up`.
 - **Ports:** development keeps 8080 (API), 5173 (Vite) and 5432 (dev Postgres); this app's Postgres isn't published at all.
+- **The `.orb.local` name and Chromium browsers:** OrbStack publishes `frontend.expense-tracker-mac.orb.local` over mDNS only. macOS, `curl` and Safari resolve it; Chrome, Vivaldi and Edge use their own DNS client, which never asks macOS, so there it fails with `ERR_NAME_NOT_RESOLVED` however you set "Secure DNS". `scripts/mac-app.sh hosts` pins the name to the container's current address in `/etc/hosts`, which both resolvers read (`hosts remove` undoes it); re-run it after a rebuild that recreates the frontend, since the address changes. `http://localhost:8090` needs none of this, and so does any `*.localhost` name, e.g. `http://expenses.localhost:8090`.
 - **Wiping this app's data is irreversible:** `scripts/mac-app.sh down && docker volume rm expense-tracker-mac_pgdata`.
 
 ## Deploying to the Raspberry Pi

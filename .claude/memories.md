@@ -72,6 +72,9 @@ The user-level `~/.m2/settings.xml` has a work profile (`prolion`) that is activ
 - Backups go to `backups/mac/` through `BACKUP_DIR`.
 - IntelliJ has *App on Mac (Docker)* and *App on Mac: stop*.
 - Never run `down -v` or remove that volume without asking: it holds real data.
+- **`*.orb.local` does not resolve in Chromium browsers.** OrbStack publishes `frontend.expense-tracker-mac.orb.local` over mDNS only: macOS, `curl` and Safari find it, `dig` against any nameserver does not, and Chrome/Vivaldi/Edge resolve with their own DNS client that never asks macOS and never speaks mDNS - so they fail with `ERR_NAME_NOT_RESOLVED` whatever "Secure DNS" is set to, and `chrome://flags/#enable-async-dns` no longer exists to turn that off. Diagnosed 2026-09-21; the containers were healthy the whole time.
+  - `scripts/mac-app.sh hosts` writes the current container address into `/etc/hosts` (the one place both resolvers look), `hosts remove` drops it, and `up` warns when an existing entry has gone stale. Recreating the container changes the address, so the entry needs refreshing then.
+  - `http://localhost:8090` (the published port) and any `*.localhost` name, e.g. `http://expenses.localhost:8090`, avoid name resolution entirely and can't break this way.
 
 ## Infrastructure decisions
 - Git remote: GitHub (`emung/expense-tracker`). There is no container registry.
