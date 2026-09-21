@@ -17,3 +17,4 @@ A self-hosted, single-user expense tracker that replaces an Apple Numbers spread
 - Modify the ROADMAP.md after a milestone / feature is complete so I know what is already done and what is not done yet
 - Do not start any dev server until you got my permission
 - Do not run any database migration until you got my permission
+- Everytime something is unclear - ASK!
