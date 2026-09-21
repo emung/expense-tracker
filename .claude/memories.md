@@ -88,6 +88,21 @@ The user-level `~/.m2/settings.xml` has a work profile (`prolion`) that is activ
   `/api/merchant-rules?q=` to fill in the ids, so the merchant rules this app already learns
   also drive SmartBill's category/account pre-fill.
 
+### The trap it sprang: nginx must forward the port in `Host`
+Switching CORS on made **every same-origin write 403** ("Invalid CORS request"), because
+browsers send `Origin` on POST/PUT/DELETE even same-origin, and Spring's
+`CorsUtils.isCorsRequest` compares scheme + host + **port** against it. nginx was sending
+`proxy_set_header Host $host`, and `$host` strips the port, so the backend thought it was
+`http://localhost` while the browser said `http://localhost:8090` - cross-origin, not listed,
+rejected. Fixed with `Host $http_host`. GET hid the bug (no `Origin` on same-origin GETs), and
+so did an empty `APP_CORS_ALLOWED_ORIGINS` (no mapping, nothing to reject) - it only bites a
+deployment that has actually switched CORS on, like `.env.mac`.
+- Preflight-only tests miss this entirely. `CorsConfigTest` now also sends a plain `DELETE`
+  with an `Origin`, same-origin and cross-origin.
+- Still latent for TLS: `request.getScheme()` is `http` behind nginx, so an `https://` origin
+  would mismatch again. `server.forward-headers-strategy: framework` would fix that when the
+  time comes (nginx already sends `X-Forwarded-Proto`).
+
 ## Infrastructure decisions
 - Git remote: GitHub (`emung/expense-tracker`). There is no container registry.
 - The Pi 5 builds the images itself: `git pull && docker compose -f docker-compose.prod.yml up -d --build`.

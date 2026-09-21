@@ -44,6 +44,26 @@ class CorsConfigTest {
                 .hasStatus(org.springframework.http.HttpStatus.FORBIDDEN);
     }
 
+    /**
+     * The app's own frontend must keep working. Browsers send Origin on every POST, PUT and
+     * DELETE, even same-origin ones, so a CORS mapping that does not recognise the app's own
+     * origin turns every write into a 403. Spring compares scheme, host and port, which means
+     * nginx has to forward the Host header complete with its port (see nginx/default.conf).
+     */
+    @Test
+    void sameOriginWritesAreNotTreatedAsCrossOrigin() {
+        assertThat(mvc.delete().uri("/api/expenses/1")
+                .header(HttpHeaders.ORIGIN, "http://localhost"))
+                .hasStatus(org.springframework.http.HttpStatus.NO_CONTENT);
+    }
+
+    @Test
+    void aWriteFromAnUnknownOriginIsRejected() {
+        assertThat(mvc.delete().uri("/api/expenses/1")
+                .header(HttpHeaders.ORIGIN, "https://evil.example"))
+                .hasStatus(org.springframework.http.HttpStatus.FORBIDDEN);
+    }
+
     /** No credentials: a listed origin must not be able to ride a session cookie. */
     @Test
     void credentialsAreNotAllowed() {
