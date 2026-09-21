@@ -76,6 +76,18 @@ The user-level `~/.m2/settings.xml` has a work profile (`prolion`) that is activ
   - `scripts/mac-app.sh hosts` writes the current container address into `/etc/hosts` (the one place both resolvers look), `hosts remove` drops it, and `up` warns when an existing entry has gone stale. Recreating the container changes the address, so the entry needs refreshing then.
   - `http://localhost:8090` (the published port) and any `*.localhost` name, e.g. `http://expenses.localhost:8090`, avoid name resolution entirely and can't break this way.
 
+## Cross-origin API access (for SmartBill)
+- The backend had **no CORS config and no auth**: the frontend only works because nginx
+  proxies `/api` same-origin, and prod compose publishes only the nginx port.
+- `common/web/CorsConfig.java` (the project's first `@Configuration`) opens `/api/**` to the
+  origins in `app.cors.allowed-origins` / `APP_CORS_ALLOWED_ORIGINS`, **empty by default** so
+  CORS stays off unless switched on. `allowCredentials(false)`, never `*` with credentials.
+- Wired through both compose files (backend service only) and both `.env*.example` files.
+- The consumer is `~/dev/repos/private/smartbills`, a bill-scanning PWA that OCRs a receipt
+  and POSTs an `ExpenseRequest`. It reads `/api/categories`, `/api/accounts` and
+  `/api/merchant-rules?q=` to fill in the ids, so the merchant rules this app already learns
+  also drive SmartBill's category/account pre-fill.
+
 ## Infrastructure decisions
 - Git remote: GitHub (`emung/expense-tracker`). There is no container registry.
 - The Pi 5 builds the images itself: `git pull && docker compose -f docker-compose.prod.yml up -d --build`.
