@@ -2,7 +2,8 @@
 # Dumps the database to backups/expenses-YYYY-MM-DD_HHMMSS.dump (pg_dump custom format) and keeps the newest $KEEP dumps.
 #
 # Usage:   scripts/backup.sh [compose-file]        (default: docker-compose.prod.yml)
-# Cron:    15 3 * * * cd /home/pi/expense-tracker && mkdir -p backups && scripts/backup.sh >> backups/backup.log 2>&1
+# Cron:    15 3 * * * cd /path/to/expense-tracker && mkdir -p backups && scripts/backup.sh >> backups/backup.log 2>&1
+#          Generate that line with the right absolute path: echo "15 3 * * * cd $PWD && mkdir -p backups && scripts/backup.sh >> backups/backup.log 2>&1"
 # Restore: see README.md, "Backups and restore".
 set -euo pipefail
 

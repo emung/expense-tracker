@@ -150,7 +150,7 @@ The Pi holds the only copy of the data, so schedule backups:
 
 ```bash
 scripts/backup.sh                            # writes backups/expenses-<timestamp>.dump, keeps the newest 30 (KEEP=n)
-crontab -e                                   # 15 3 * * * cd /home/pi/expense-tracker && mkdir -p backups && scripts/backup.sh >> backups/backup.log 2>&1
+crontab -e                                   # see docs/HOWTO-deploy-pi.md step 5, which prints the line with the right absolute path
 ```
 
 Copy `backups/` off the Pi regularly, for example with `rsync` to another machine.

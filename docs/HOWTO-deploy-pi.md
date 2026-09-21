@@ -14,6 +14,10 @@ What you end up with, from `docker-compose.prod.yml` (project name `expense-trac
 
 All three use `restart: unless-stopped`, so they come back after a reboot or a power cut.
 
+> **Paths below assume the checkout is at `~/expense-tracker` and the user is `pi`.** Substitute your
+> own — the only place it really matters is the crontab, which needs an absolute path and does not
+> expand `~`; step 5 generates that line for you rather than asking you to edit it by hand.
+
 > **The app has no login.** It is meant for your home network only. Do not port-forward it, and do not
 > put it on a public hostname.
 
@@ -41,11 +45,15 @@ curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker "$USER"
 ```
 
-Log out and back in, then check — the second command must print **v2.x**:
+Log out and back in, then check:
 
 ```bash
-docker run --rm hello-world && docker compose version
+docker run --rm hello-world && docker compose version && docker version --format '{{.Server.Arch}}'
 ```
+
+What matters is that `docker compose` (the plugin) answers at all — **v2 or newer**; it is on v5.x
+today. The thing to avoid is the legacy standalone `docker-compose` v1, which has no BuildKit. The
+`Arch` line must say `arm64`, which also settles the 64-bit question above.
 
 **Disk.** The images, the build caches and the database want room. Check the root filesystem:
 
@@ -229,14 +237,21 @@ cd ~/expense-tracker && docker run --rm -i postgres:17-alpine pg_restore --list 
 
 You should get a table of contents ending in indexes and foreign keys.
 
-Then schedule it with `crontab -e`:
+Then schedule it. Print the line from the checkout itself, so the absolute path is right whatever the
+user and directory are — cron does not expand `~`:
 
-```
-15 3 * * * cd /home/pi/expense-tracker && mkdir -p backups && scripts/backup.sh >> backups/backup.log 2>&1
+```bash
+echo "15 3 * * * cd $PWD && mkdir -p backups && scripts/backup.sh >> backups/backup.log 2>&1"
 ```
 
-The `mkdir -p` is not decoration: the shell creates `backup.log` *before* running the script, so without
-it the very first run fails silently if `backups/` is missing.
+Paste that into `crontab -e`. The `mkdir -p` is not decoration: the shell creates `backup.log` *before*
+running the script, so without it the very first run fails silently if `backups/` is missing.
+
+Confirm it took, and that the path in it is real:
+
+```bash
+crontab -l | tail -1
+```
 
 **A backup on the same SD card as the database is not a backup.** Copy them off the Pi — for example,
 from another machine:
