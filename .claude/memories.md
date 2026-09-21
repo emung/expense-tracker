@@ -157,6 +157,12 @@ when A5 adds a second delete call site. `notifyUndo` itself is generic - A4 and 
    rewritten to what it already was, unless a *different* entry for the same merchant was saved inside
    the same 8 seconds. Not worth code.
 
+6. **A Mantine `Button` inside a `nowrap` `Group` shrinks and clips its own label** - its label span
+   is `overflow: hidden`, so "Anulează" rendered as "Anuleaz" (`clientWidth` 51 vs `scrollWidth` 62)
+   next to a long message. `flex="0 0 auto"` on the button fixes it. **jsdom has no layout**, so no
+   component test can catch this class of bug - measure `scrollWidth > clientWidth` in the Browser
+   pane instead.
+
 Also: a restore whose category or account was archived in the meantime is refused by
 `ExpenseService.resolveCategory` (400 - there is no "current" category to grandfather on a create).
 `isTransientError` in `notify.tsx` keeps the retry offer for 0/5xx only, since a 4xx would fail again.

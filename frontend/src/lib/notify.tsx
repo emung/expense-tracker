@@ -55,7 +55,8 @@ export function notifyUndo({ message, onUndo, actionLabel = 'Anulează', autoClo
     message: (
       <Group justify="space-between" wrap="nowrap" gap="md">
         <Text size="sm">{message}</Text>
-        <Button variant="subtle" color="teal" size="compact-sm" onClick={take}>
+        {/* The message wins the leftover space; without this the button shrinks and clips its label. */}
+        <Button variant="subtle" color="teal" size="compact-sm" flex="0 0 auto" onClick={take}>
           {actionLabel}
         </Button>
       </Group>
