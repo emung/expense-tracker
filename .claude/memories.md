@@ -76,6 +76,33 @@ The user-level `~/.m2/settings.xml` has a work profile (`prolion`) that is activ
   - `scripts/mac-app.sh hosts` writes the current container address into `/etc/hosts` (the one place both resolvers look), `hosts remove` drops it, and `up` warns when an existing entry has gone stale. Recreating the container changes the address, so the entry needs refreshing then.
   - `http://localhost:8090` (the published port) and any `*.localhost` name, e.g. `http://expenses.localhost:8090`, avoid name resolution entirely and can't break this way.
 
+## Cross-origin API access (for SmartBill)
+- The backend had **no CORS config and no auth**: the frontend only works because nginx
+  proxies `/api` same-origin, and prod compose publishes only the nginx port.
+- `common/web/CorsConfig.java` (the project's first `@Configuration`) opens `/api/**` to the
+  origins in `app.cors.allowed-origins` / `APP_CORS_ALLOWED_ORIGINS`, **empty by default** so
+  CORS stays off unless switched on. `allowCredentials(false)`, never `*` with credentials.
+- Wired through both compose files (backend service only) and both `.env*.example` files.
+- The consumer is `~/dev/repos/private/smartbills`, a bill-scanning PWA that OCRs a receipt
+  and POSTs an `ExpenseRequest`. It reads `/api/categories`, `/api/accounts` and
+  `/api/merchant-rules?q=` to fill in the ids, so the merchant rules this app already learns
+  also drive SmartBill's category/account pre-fill.
+
+### The trap it sprang: nginx must forward the port in `Host`
+Switching CORS on made **every same-origin write 403** ("Invalid CORS request"), because
+browsers send `Origin` on POST/PUT/DELETE even same-origin, and Spring's
+`CorsUtils.isCorsRequest` compares scheme + host + **port** against it. nginx was sending
+`proxy_set_header Host $host`, and `$host` strips the port, so the backend thought it was
+`http://localhost` while the browser said `http://localhost:8090` - cross-origin, not listed,
+rejected. Fixed with `Host $http_host`. GET hid the bug (no `Origin` on same-origin GETs), and
+so did an empty `APP_CORS_ALLOWED_ORIGINS` (no mapping, nothing to reject) - it only bites a
+deployment that has actually switched CORS on, like `.env.mac`.
+- Preflight-only tests miss this entirely. `CorsConfigTest` now also sends a plain `DELETE`
+  with an `Origin`, same-origin and cross-origin.
+- Still latent for TLS: `request.getScheme()` is `http` behind nginx, so an `https://` origin
+  would mismatch again. `server.forward-headers-strategy: framework` would fix that when the
+  time comes (nginx already sends `X-Forwarded-Proto`).
+
 ## Infrastructure decisions
 - Git remote: GitHub (`emung/expense-tracker`). There is no container registry.
 - The Pi 5 builds the images itself: `git pull && docker compose -f docker-compose.prod.yml up -d --build`.
