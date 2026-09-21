@@ -23,5 +23,7 @@ frontend/dist/
 frontend/coverage/
 *.tsbuildinfo
 
-# Database dumps
-backups/
+# Database dumps. The directory itself is tracked (via .gitkeep) so a fresh clone on the
+# Pi has somewhere for cron to write backup.log before scripts/backup.sh has even run.
+backups/*
+!backups/.gitkeep
