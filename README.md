@@ -24,6 +24,7 @@ docker-compose.yml        development (Postgres; add --profile app for the full 
 docker-compose.prod.yml   production on the Pi (builds images on the host)
 scripts/backup.sh         pg_dump backups with retention
 docs/ROADMAP.md           planned v2 features and their sequencing
+docs/HOWTO-deploy-pi.md   first deployment to the Raspberry Pi, and day-to-day operation
 ```
 
 ## Development
@@ -113,7 +114,9 @@ scripts/mac-app.sh down         # stop (data is kept)
 
 The Pi builds the arm64 images itself from a git checkout, so no container registry is needed.
 
-One-time setup, with Docker and the Compose plugin installed on the Pi:
+**For a first install, follow [docs/HOWTO-deploy-pi.md](docs/HOWTO-deploy-pi.md)** — it covers the
+prerequisites that decide whether the build works at all (64-bit OS, Docker CE with Compose v2 for
+BuildKit, swap on a 4 GB Pi, a deploy key), then verification and backups. The short version:
 
 ```bash
 git clone git@github.com:emung/expense-tracker.git ~/expense-tracker
@@ -147,7 +150,7 @@ The Pi holds the only copy of the data, so schedule backups:
 
 ```bash
 scripts/backup.sh                            # writes backups/expenses-<timestamp>.dump, keeps the newest 30 (KEEP=n)
-crontab -e                                   # 15 3 * * * cd /home/pi/expense-tracker && scripts/backup.sh >> backups/backup.log 2>&1
+crontab -e                                   # see docs/HOWTO-deploy-pi.md step 5, which prints the line with the right absolute path
 ```
 
 Copy `backups/` off the Pi regularly, for example with `rsync` to another machine.
