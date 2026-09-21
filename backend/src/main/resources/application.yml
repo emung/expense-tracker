@@ -19,6 +19,12 @@ spring:
     problemdetails:
       enabled: true
 
+# Browser clients served from another origin, e.g. the SmartBill PWA. Comma-separated;
+# empty means no cross-origin access at all. See CorsConfig.
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:}
+
 server:
   port: ${SERVER_PORT:8080}
   shutdown: graceful
