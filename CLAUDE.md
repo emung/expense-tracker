@@ -13,3 +13,4 @@ A self-hosted, single-user expense tracker that replaces an Apple Numbers spread
 - Schema changes go in new Liquibase changesets only. Never edit a changeset that has already been applied.
 - Money is `numeric(12,2)` / `BigDecimal` with HALF_UP rounding. The server computes `amount_ron`.
 - Commit messages: no Co-Authored-By trailers.
+- Modify the ROADMAP.md after a milestone / feature is complete so I know what is already done and what is not done yet
