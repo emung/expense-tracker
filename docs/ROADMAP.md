@@ -16,6 +16,10 @@ actually exists today.
 - Budgets are a **fixed monthly plan per category**, not a rolling average.
 - **Capture friction is the first slice.** Analytics come once capture is complete enough to trust.
 
+**Deployment status:** the app runs on the Raspberry Pi 5 ✅ (first deployed 2026-09-23, on port 8090,
+see [HOWTO-deploy-pi.md](HOWTO-deploy-pi.md)). Reboot survival and the nightly backup cron are verified;
+copying backups off the Pi stays a manual `rsync`.
+
 ---
 
 ## Foundations — reuse these, don't reinvent them

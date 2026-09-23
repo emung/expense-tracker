@@ -14,6 +14,9 @@ What you end up with, from `docker-compose.prod.yml` (project name `expense-trac
 
 All three use `restart: unless-stopped`, so they come back after a reboot or a power cut.
 
+> **First deployed 2026-09-23** on a Pi 5 (8 GB) as user `admin`, checkout `~/dev/repos/expense-tracker`,
+> with `APP_PORT=8090` because a host nginx already held port 80. Everything below was run as written.
+
 > **Paths below assume the checkout is at `~/expense-tracker` and the user is `pi`.** Substitute your
 > own — the only place it really matters is the crontab, which needs an absolute path and does not
 > expand `~`; step 5 generates that line for you rather than asking you to edit it by hand.
@@ -101,6 +104,18 @@ confirm:
 ```bash
 ssh -T git@github.com
 ```
+
+**A free port.** Only the frontend is published, on `APP_PORT` (the backend on 8080 and Postgres on
+5432 stay on the internal Docker network, so they cannot conflict with anything on the host). Check the
+port you plan to use, and what Docker already publishes:
+
+```bash
+sudo ss -ltnp | grep -E ':80\s' || echo "port 80 is FREE"
+docker ps --format 'table {{.Names}}\t{{.Ports}}'
+```
+
+If something holds it, such as a host nginx, pick another port, check it the same way, and use it as
+`APP_PORT` in step 2. Then replace `localhost` and `80` in the URLs in step 4 with that port.
 
 **A fixed address.** You will want to reach the app by something stable. Give the Pi a static DHCP
 lease in your router. `raspberrypi.local` works from macOS and Safari, but Chromium browsers resolve
@@ -244,7 +259,15 @@ user and directory are — cron does not expand `~`:
 echo "15 3 * * * cd $PWD && mkdir -p backups && scripts/backup.sh >> backups/backup.log 2>&1"
 ```
 
-Paste that into `crontab -e`. The `mkdir -p` is not decoration: the shell creates `backup.log` *before*
+Paste that into `crontab -e`, and pick **nano** if it asks for an editor: choosing `/usr/bin/code`
+over SSH exits with "No modification made" and installs nothing. To skip the editor entirely, pipe the
+line in (this appends and keeps any existing jobs):
+
+```bash
+( crontab -l 2>/dev/null; echo "15 3 * * * cd $PWD && mkdir -p backups && scripts/backup.sh >> backups/backup.log 2>&1" ) | crontab -
+```
+
+The `mkdir -p` is not decoration: the shell creates `backup.log` *before*
 running the script, so without it the very first run fails silently if `backups/` is missing.
 
 Confirm it took, and that the path in it is real:

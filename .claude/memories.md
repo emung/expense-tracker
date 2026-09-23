@@ -196,13 +196,30 @@ Also: a restore whose category or account was archived in the meantime is refuse
 A Mantine `Modal` only renders its content while `opened`, so a test asserting `ConfirmDialog` copy
 must open it first.
 
-## Raspberry Pi deployment (documented, not yet performed)
+## Raspberry Pi deployment (deployed 2026-09-23)
 `docs/HOWTO-deploy-pi.md` is the first-install guide: prerequisites, build, verification, backups,
-day-to-day. The README's Pi section links it and keeps only the short version. As of writing, the Pi
-deploy has **not actually been run** - the prod compose path is proven only on the Mac
-(`scripts/mac-app.sh`, same `docker-compose.prod.yml`).
+day-to-day. The README's Pi section links it and keeps only the short version.
 
-What was checked before writing it:
+**It has been run for real.** Pi 5, 8 GB, 64-bit Raspberry Pi OS, Docker Compose v5.3.1, arm64. The
+first build and Liquibase run went through with no swap change, all three containers went healthy,
+the app answered from the Mac, the nightly backup cron is installed and a dump was checked with
+`pg_restore --list`, and after a reboot the containers came back by themselves with two test entries
+intact.
+
+How this Pi differs from the guide's assumptions:
+- **`APP_PORT=8090`, not 80.** A host nginx (not Docker) already holds port 80, and Portainer holds 8000
+  and 9443. Only the frontend port is published, so `APP_PORT` is the only port that needs checking
+  before an install (`sudo ss -ltnp | grep -E ':8090\s'`). URL: `http://<pi-ip>:8090/`.
+- **User `admin`, checkout at `~/dev/repos/expense-tracker`**, not `pi` / `~/expense-tracker`. The cron
+  line is generated from `$PWD`, so it is right either way.
+- Backups are **not** copied off the Pi automatically (the user declined a Mac-side job); the manual
+  `rsync` is the only off-card copy.
+- The Pi also runs an unrelated `expense-bot` container. Don't touch it.
+- `crontab -e` offers an editor menu; choosing `/usr/bin/code` over SSH silently saves nothing ("No
+  modification made"). Pick nano, or install the line non-interactively:
+  `( crontab -l 2>/dev/null; echo "<line>" ) | crontab -`.
+
+What was checked before writing the guide:
 - **All five base images have arm64 manifests** (temurin 25 jdk/jre, node:24-slim, nginx:stable-alpine,
   postgres:17-alpine), so nothing needs cross-building.
 - **`frontend/package-lock.json` carries the linux-arm64 native binaries** the build needs -

@@ -121,9 +121,13 @@ BuildKit, swap on a 4 GB Pi, a deploy key), then verification and backups. The s
 ```bash
 git clone git@github.com:emung/expense-tracker.git ~/expense-tracker
 cd ~/expense-tracker
-cp .env.example .env    # set a strong POSTGRES_PASSWORD, and APP_PORT=80
+cp .env.example .env    # set a strong POSTGRES_PASSWORD, and APP_PORT=80 (or another free port)
 docker compose -f docker-compose.prod.yml up -d --build
 ```
+
+Only `APP_PORT` is published, so check that it is free first:
+`sudo ss -ltnp | grep -E ':80\s' || echo "port 80 is FREE"`. If something else holds it, pick another
+port (the first deployment uses 8090) and open `http://<pi-ip>:<port>/`.
 
 Updating:
 
